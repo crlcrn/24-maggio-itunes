@@ -1,0 +1,65 @@
+from database.DB_connect import DBConnect
+from model.Genere import Genere
+from model.Track import Track
+
+
+class DAO():
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def get_genere():
+        conn = DBConnect.get_connection()
+
+        result = []
+
+        cursor = conn.cursor(dictionary=True)
+        query = """
+                select *
+                from genre g  
+                """
+        cursor.execute(query)
+        for row in cursor:
+            result.append(Genere(**row))
+        cursor.close()
+        conn.close()
+        return result
+
+    @staticmethod
+    def get_nodi(genere):
+        conn = DBConnect.get_connection()
+
+        result = []
+
+        cursor = conn.cursor(dictionary=True)
+        query = """
+                select t.*
+                from track t 
+                where t.GenreId =  %s  
+                """
+        cursor.execute(query, (genere, ))
+        for row in cursor:
+            result.append(Track(**row))
+        cursor.close()
+        conn.close()
+        return result
+
+    @staticmethod
+    def get_archi(genere):
+        conn = DBConnect.get_connection()
+
+        result = []
+
+        cursor = conn.cursor(dictionary=True)
+        query = """
+                select t1.TrackId as t1, t2.TrackId as t2, abs(t1.Milliseconds - t2.Milliseconds) as peso
+                from track t1, track t2, genre g 
+                where t2.MediaTypeId = t1.MediaTypeId and t1.TrackId < t2.TrackId and t1.GenreId = g.GenreId and t2.GenreId = g.GenreId 
+                and g.GenreId = %s
+                """
+        cursor.execute(query, (genere, ))
+        for row in cursor:
+            result.append((row['t1'], row['t2'], row['peso']))
+        cursor.close()
+        conn.close()
+        return result
